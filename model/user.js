@@ -9,16 +9,14 @@ const UserSchema = new Schema({
     last_name: { type: String, required: true, max: 100 },
     username: { type: String },
     password: { type: String },
-    date_of_birth: { type: Date }
+   date_of_birth: { type: Date }
 });
 
 UserSchema.index({ first_name: 1, last_name: -1 });
 
-UserSchema.methods.dudify = function () {
-    return this.name + ' dude!';
-};
 
-UserSchema
+
+/*UserSchema
     .virtual('name')
     .get(function () {
         return this.last_name + ', ' + this.first_name;
@@ -29,7 +27,8 @@ UserSchema
     .get(function () {
         return '/users/detail/' + this._id;
     });
-
+*/
+/*
 UserSchema
     .virtual('url')
     .get(function () {
@@ -41,7 +40,7 @@ UserSchema
     .get(function () {
         return moment(this.date_of_birth).utc().format('YYYY-MM-DD');
     });
-
+*/
 
 const algorithm = 'aes-256-ctr';
 const password = 'aSjlkvS89';
@@ -52,7 +51,6 @@ function encrypt(text) {
     crypted += cipher.final('hex');
     return crypted;
 }
-
 UserSchema.pre('save', function (next) {
     var pwd = this.password;
     console.log("hashing password: " + pwd);
