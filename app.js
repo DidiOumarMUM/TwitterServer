@@ -1,66 +1,77 @@
-var createError = require('http-errors');
+var http = require('http');
 var express = require('express');
-const jwt = require('jsonwebtoken') ;
 var path = require('path');
-var cookieParser = require('cookie-parser');
-var lessMiddleware = require('less-middleware');
-var logger = require('morgan');
+var methods = require('methods');
+var cors = require('cors');
+var passport = require('passport');
+var errorhandler = require('errorhandler');
+var mongoose = require('mongoose');
+var bodyParser = require('body-parser');
+var session = require('express-session');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+mongoose.plugin(schema => { schema.options.usePushEach = true });
 
-const mongoose = require('mongoose');
-//Set up default mongoose connection
-//const mongoDB = 'mongodb://localhost:27017/testDB';
-const mongoDB = 'mongodb://mwaproject:mwaproject2018@ds047085.mlab.com:47085/mwaproject' ;
 
-mongoose.connect(mongoDB);
-// Get Mongoose to use the global promise library
-mongoose.Promise = global.Promise;
-//Get the default connection
-var db = mongoose.connection;
-
-//Bind connection to error event (to get notification of connection errors)
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-
+var isProduction = process.env.NODE_ENV === 'production';
 
 var app = express();
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+app.use(cors());
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(lessMiddleware(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(require('morgan')('dev'));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-  app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "OPTIONS, HEAD, GET, POST, PUT, DELETE");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next();
-});
+app.use(require('method-override')());
+app.use(express.static(__dirname + '/public'));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use(session({ secret: 'tweeter', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false  }));
 
-// catch 404 and forward to error handler
+if (!isProduction) {
+  app.use(errorhandler());
+}
+
+if(isProduction){
+  mongoose.connect(process.env.MONGODB_URI);
+} else {
+  mongoose.connect('mongodb://localhost/twitterCloneServer3');
+  mongoose.set('debug', true);
+}
+
+require('./models/User');
+require('./models/Article');
+require('./models/Comment');
+require('./config/passport');
+
+app.use(require('./routes'));
+
 app.use(function(req, res, next) {
-  next(createError(404));
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
-// error handler
+if (!isProduction) {
+  app.use(function(err, req, res, next) {
+    console.log(err.stack);
+
+    res.status(err.status || 500);
+
+    res.json({'errors': {
+      message: err.message,
+      error: err
+    }});
+  });
+}
+
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.json({'errors': {
+    message: err.message,
+    error: {}
+  }});
 });
 
-module.exports = app;
+var server = app.listen( process.env.PORT || 3000, function(){
+  console.log('Listening on port ' + server.address().port);
+});
