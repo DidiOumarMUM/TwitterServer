@@ -16,6 +16,9 @@ var isProduction = process.env.NODE_ENV === 'production';
 
 var app = express();
 
+app.use(express.cookieParser('tweeter'));
+app.use(express.session());
+
 app.use(cors());
 
 app.use(require('morgan')('dev'));
@@ -25,17 +28,17 @@ app.use(bodyParser.json());
 app.use(require('method-override')());
 app.use(express.static(__dirname + '/public'));
 
-app.use(session({ secret: 'tweeter', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false  }));
+app.use(session({ secret: 'tweeter', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false }));
 
 if (!isProduction) {
-  app.use(errorhandler());
+    app.use(errorhandler());
 }
 
-if(isProduction){
-  mongoose.connect(process.env.MONGODB_URI);
+if (isProduction) {
+    mongoose.connect(process.env.MONGODB_URI);
 } else {
-  mongoose.connect('mongodb://localhost/twitterCloneServer3');
-  mongoose.set('debug', true);
+    mongoose.connect('mongodb://localhost/twitterCloneServer3');
+    mongoose.set('debug', true);
 }
 
 require('./models/User');
@@ -46,32 +49,36 @@ require('./config/passport');
 app.use(require('./routes'));
 
 app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
 });
 
 if (!isProduction) {
-  app.use(function(err, req, res, next) {
-    console.log(err.stack);
+    app.use(function(err, req, res, next) {
+        console.log(err.stack);
 
-    res.status(err.status || 500);
+        res.status(err.status || 500);
 
-    res.json({'errors': {
-      message: err.message,
-      error: err
-    }});
-  });
+        res.json({
+            'errors': {
+                message: err.message,
+                error: err
+            }
+        });
+    });
 }
 
 app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.json({'errors': {
-    message: err.message,
-    error: {}
-  }});
+    res.status(err.status || 500);
+    res.json({
+        'errors': {
+            message: err.message,
+            error: {}
+        }
+    });
 });
 
-var server = app.listen( process.env.PORT || 3000, function(){
-  console.log('Listening on port ' + server.address().port);
+var server = app.listen(process.env.PORT || 3000, function() {
+    console.log('Listening on port ' + server.address().port);
 });
