@@ -16,9 +16,6 @@ var isProduction = process.env.NODE_ENV === 'production';
 
 var app = express();
 
-app.use(express.cookieParser('tweeter'));
-app.use(express.session());
-
 app.use(cors());
 
 app.use(require('morgan')('dev'));
@@ -33,13 +30,8 @@ app.use(session({ secret: 'tweeter', cookie: { maxAge: 60000 }, resave: false, s
 if (!isProduction) {
     app.use(errorhandler());
 }
+mongoose.connect(process.env.MONGOLAB_URI || 'mongodb://localhost/twitterCloneServer3');
 
-if (isProduction) {
-    mongoose.connect(process.env.MONGODB_URI);
-} else {
-    mongoose.connect('mongodb://localhost/twitterCloneServer3');
-    mongoose.set('debug', true);
-}
 
 require('./models/User');
 require('./models/Article');
