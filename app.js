@@ -30,7 +30,7 @@ app.use(session({ secret: 'tweeter', cookie: { maxAge: 60000 }, resave: false, s
 if (!isProduction) {
     app.use(errorhandler());
 }
-mongoose.connect(process.env.MONGOLAB_URI || 'mongodb://localhost/twitterCloneServer3');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/twitterCloneServer3');
 
 
 require('./models/User');
